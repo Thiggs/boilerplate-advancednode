@@ -34,13 +34,13 @@ mongo.connect(process.env.DATABASE, (err, db) => {
   else {
     console.log('Successful database connection');
     
-const dbInfo = db.db("test");    
+const dbInfo = db.db('test');    
     
       passport.serializeUser((user, done) => {
   done(null, user._id);
 });
 passport.deserializeUser((id, done) => {
-  ObjectID.collection('users').findOne(
+  dbInfo.collection('users').findOne(
     {_id: new ObjectID(id)},
       (err, doc) => {
         done(null, doc);
@@ -69,8 +69,37 @@ passport.use(new LocalStrategy(
     
 app.route('/')
   .get((req, res) => {
-    res.render(process.cwd() + '/views/pug/index', {title: 'Home Page', message: 'Please login', showLogin: true});
+    res.render(process.cwd() + '/views/pug/index', {title: 'Home Page', message: 'Please login', showLogin: true, showRegistration: true});
   });
+    
+app.route('/register')
+  .post((req, res, next) => {
+    dbInfo.collection('users').findOne({ username: req.body.username }, function(err, user) {
+      if (err) {
+        next(err);
+      } else if (user) {
+        res.redirect('/');
+      } else {
+        dbInfo.collection('users').insertOne({
+          username: req.body.username,
+          password: req.body.password
+        },
+          (err, doc) => {
+            if (err) {
+              res.redirect('/');
+            } else {
+              next(null, user);
+            }
+          }
+        )
+      }
+    })
+  },
+    passport.authenticate('local', { failureRedirect: '/' }),
+    (req, res, next) => {
+      res.redirect('/profile');
+    }
+  );
     
 app.route('/login')
     .post(passport.authenticate('local', { failureRedirect: '/' }), (req, res)=>{
@@ -82,8 +111,8 @@ app.route('/login')
       .get(ensureAuthenticated, (req,res) => {
         res.render(process.cwd() + '/views/pug/profile', {username:req.user.username});
           });
-
-          app.route('/logout')
+    
+              app.route('/logout')
           .get((req, res) => {
             req.logout();
             res.redirect('/');
