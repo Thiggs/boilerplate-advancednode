@@ -38,3 +38,6 @@ and change the h1 to h1.border.center Home Page freeCodeCampTester
 and change the h1 to h1.border.center Profile Home freeCodeCampTester
 
 4. go into Mongo DB, and delete your database. Run the tests (Some say you have to run it twice, but I passed on the first go.)
+
+
+DONE!
