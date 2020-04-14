@@ -6,8 +6,9 @@ const fccTesting  = require('./freeCodeCamp/fcctesting.js');
 const session     = require('express-session')
 const passport    = require('passport')
 const ObjectID    = require('mongodb').ObjectID;
-const mongo = require('mongodb').MongoClient;
+const mongo       = require('mongodb').MongoClient;
 const LocalStrategy = require('passport-local');
+const bcrypt      = require('bcrypt')
 
 const app = express();
 
@@ -54,7 +55,7 @@ passport.use(new LocalStrategy(
       console.log('User '+ username +' attempted to log in.');
       if (err) { return done(err); }
       if (!user) { return done(null, false); }
-      if (password !== user.password) { return done(null, false); }
+        if (!bcrypt.compareSync(password, user.password)) { return done(null, false); }
       return done(null, user);
     });
   }
@@ -74,6 +75,7 @@ app.route('/')
     
 app.route('/register')
   .post((req, res, next) => {
+  var hash = bcrypt.hashSync(req.body.password, 12);
     dbInfo.collection('users').findOne({ username: req.body.username }, function(err, user) {
       if (err) {
         next(err);
@@ -82,7 +84,7 @@ app.route('/register')
       } else {
         dbInfo.collection('users').insertOne({
           username: req.body.username,
-          password: req.body.password
+          password: hash
         },
           (err, doc) => {
             if (err) {
